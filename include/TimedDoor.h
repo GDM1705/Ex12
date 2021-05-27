@@ -13,7 +13,7 @@ class TimerControl {
     virtual void Timeout() = 0;
 };
 class DoorState {
- public:  
+ public:
       virtual void lock() = 0;
       virtual void unlock() = 0;
       virtual bool isDoorOpened() = 0;
