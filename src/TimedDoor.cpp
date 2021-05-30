@@ -1,48 +1,46 @@
 // Copyright 2021 Golovanov
-#include <ctime>
+#include "TimedDoor.h"
+#include <iostream>
 #include <string>
 
-#include "TimedDoor.h"
 
-void DoorTimeAdapter::Timeout() { door.DoorTimeOut(); }
 
-TimedDoor::TimedDoor(int tout) {
-    timeout = tout;
-    state = false;
-    adapter = new DoorTimeAdapter(*this);
+DoorTimerAdapter::DoorTimerAdapter(TimedDoor& door_): door(door_) {}
+void DoorTimerAdapter::Timeout() {
+    door.DoorTimeOut();
 }
+TimedDoor::TimedDoor(int iTimeout_) : opened(false),
+adapter(new DoorTimerAdapter(*this)), iTimeout(iTimeout_) {}
 
-
-
-void TimedDoor::lock() { state = false; }
-
+bool TimedDoor::isDoorOpened() {
+    return opened;
+}
 void TimedDoor::unlock() {
-    state = true;
-    Timer timer;
-    timer.sleeptime(timeout, adapter);
+    opened = true;
+    Timer count;
+    count.tregister(iTimeout, adapter);
 }
-
-bool TimedDoor::isDoorOpened() { return state; }
-
-void TimedDoor::DoorTimeOut() { throw std::string("close the door!"); }
-
+void TimedDoor::lock() {
+    opened = false;
+}
+void TimedDoor::DoorTimeOut() {
+    throw std::string("close the door!");
+}
 void TimedDoor::throwState() {
-    if (!state) {
-        throw std::string("the door is closed!");
-    } else {
+    if (opened) {
         throw std::string("the door is opened!");
+    } else {
+        throw std::string("the door is closed!");
     }
 }
-
-void Timer::sleep(int t) {
+void Timer::sleep(int iTimeout) {
     time_t start = time(nullptr);
-    time_t end = start;
-    while (end - start < t) {
-        end = time(nullptr);
+    while (time(nullptr) - start < iTimeout) {
+        continue;
     }
 }
-
-void Timer::sleeptime(int t, TimerControl* timer_client) {
-    sleep(t);
-    timer_client->Timeout();
+void Timer::tregister(int iTimeout, TimerClient* client) {
+    this->client = client;
+    sleep(iTimeout);
+    client->Timeout();
 }
